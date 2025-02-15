@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoveFuns.site - Romantic Word Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome-screen, .game-screen, .result-screen {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ff4757;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        .rules {
+            text-align: left;
+            margin: 1.5rem 0;
+            line-height: 1.6;
+        }
+
+        .button {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .button:hover {
+            transform: scale(1.05);
+        }
+
+        .progress-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .progress-item {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .progress-item.correct {
+            background: #2ecc71;
+            border-color: #2ecc71;
+            color: white;
+        }
+
+        .progress-item.wrong {
+            background: #ff4757;
+            border-color: #ff4757;
+            color: white;
+        }
+
+        .game-content {
+            margin: 2rem 0;
+        }
+
+        .pickup-line {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .word-input {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 0.5rem;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .timer {
+            font-size: 1.2rem;
+            color: #ff4757;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+
+        .result-screen h2 {
+            color: #ff4757;
+            margin-bottom: 1rem;
+        }
+
+        .score {
+            font-size: 2rem;
+            margin: 1rem 0;
+            color: #2ecc71;
+        }
+
+        .rating {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            color: #ff4757;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .answer-feedback {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            font-size: 1.2rem;
+            color: #2ecc71;
+        }
+
+        .incorrect {
+            color: #ff4757;
+        }
+
+        .rules ul {
+            list-style-type: none;
+            padding-left: 1rem;
+        }
+
+        .rules li {
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-screen">
+            <h1>LoveFuns.site</h1>
+            <p>Test your romantic creativity with our pickup line challenge!</p>
+            <div class="rules">
+                <p>🎮 Game Rules:</p>
+                <ul>
+                    <li>Complete 10 romantic pickup lines by filling in the blanks</li>
+                    <li>You have 10 seconds for each line</li>
+                    <li>First 3 levels: 1 word</li>
+                    <li>Next 3 levels: 2 words</li>
+                    <li>Next 3 levels: 3 words</li>
+                    <li>Final level: 4 words</li>
+                    <li>Try to achieve the highest rating: Romance Genius!</li>
+                </ul>
+            </div>
+            <button class="button" onclick="startGame()">Start Game</button>
+        </div>
+
+        <div class="game-screen hidden">
+            <div class="progress-bar"></div>
+            <div class="timer">10</div>
+            <div class="game-content">
+                <div class="pickup-line"></div>
+                <div class="input-area"></div>
+                <div class="answer-feedback hidden"></div>
+            </div>
+            <button class="button submit-btn hidden" onclick="submitAnswer()">Submit</button>
+        </div>
+
+        <div class="result-screen hidden">
+            <h2>Game Over!</h2>
+            <div class="score"></div>
+            <div class="rating"></div>
+            <button class="button" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const pickupLines = [
+            {
+                text: "Are you a ___? Because whenever I look at you, everyone else disappears.",
+                answers: ["magician"],
+                blanks: 1
+            },
+            {
+                text: "Do you have a ___? I keep getting lost in your eyes.",
+                answers: ["map"],
+                blanks: 1
+            },
+            {
+                text: "Are you ___? Because you've been running through my mind all day.",
+                answers: ["tired"],
+                blanks: 1
+            },
+            {
+                text: "If you were a ___, you'd be a ___.",
+                answers: ["vegetable", "cute-cumber"],
+                blanks: 2
+            },
+            {
+                text: "Is your name ___? Because you have ___ I've been searching for.",
+                answers: ["Google", "everything"],
+                blanks: 2
+            },
+            {
+                text: "You must be a ___ because you're ___.",
+                answers: ["rainbow", "colorful"],
+                blanks: 2
+            },
+            {
+                text: "Are you ___? Because ___ for ___.",
+                answers: ["French", "Eiffel", "you"],
+                blanks: 3
+            },
+            {
+                text: "I'm not a ___, but I know ___ when I see ___.",
+                answers: ["photographer", "beauty", "it"],
+                blanks: 3
+            },
+            {
+                text: "You must be a ___, because you ___ my ___.",
+                answers: ["magnet", "attract", "heart"],
+                blanks: 3
+            },
+            {
+                text: "You must be a ___ because you ___ my ___ every ___.",
+                answers: ["star", "light", "world", "day"],
+                blanks: 4
+            }
+        ];
+
+        let currentLevel = 0;
+        let score = 0;
+        let timer;
+        let timeLeft;
+        let submissionEnabled = true;
+
+        function startGame() {
+            document.querySelector('.welcome-screen').classList.add('hidden');
+            document.querySelector('.game-screen').classList.remove('hidden');
+            initializeProgressBar();
+            startLevel();
+        }
+
+        function initializeProgressBar() {
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                progressBar.innerHTML += `<div class="progress-item">${i + 1}</div>`;
+            }
+        }
+
+        function startLevel() {
+            if (currentLevel >= pickupLines.length) {
+                endGame();
+                return;
+            }
+
+            submissionEnabled = true;
+            const line = pickupLines[currentLevel];
+            const gameContent = document.querySelector('.game-content');
+            const inputArea = document.querySelector('.input-area');
+            const answerFeedback = document.querySelector('.answer-feedback');
+            const submitBtn = document.querySelector('.submit-btn');
+            
+            document.querySelector('.pickup-line').textContent = line.text;
+            inputArea.innerHTML = '';
+            answerFeedback.classList.add('hidden');
+            submitBtn.disabled = false;
+            
+            for (let i = 0; i < line.blanks; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'word-input';
+                input.placeholder = `Word ${i + 1}`;
+                inputArea.appendChild(input);
+            }
+
+            submitBtn.classList.add('hidden');
+            startTimer();
+        }
+
+        function startTimer() {
+            timeLeft = 10;
+            updateTimer();
+            if (timer) {
+                clearInterval(timer);
+            }
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimer();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.querySelector('.submit-btn').classList.remove('hidden');
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            document.querySelector('.timer').textContent = timeLeft;
+        }
+
+        function submitAnswer() {
+            if (!submissionEnabled) return;
+            submissionEnabled = false;
+            
+            clearInterval(timer);
+            const inputs = document.querySelectorAll('.word-input');
+            const currentAnswers = pickupLines[currentLevel].answers;
+            let correct = true;
+            let userAnswers = [];
+
+            for (let i = 0; i < inputs.length; i++) {
+                userAnswers.push(inputs[i].value.toLowerCase().trim());
+                if (userAnswers[i] !== currentAnswers[i].toLowerCase()) {
+                    correct = false;
+                }
+            }
+
+            const progressItems = document.querySelectorAll('.progress-item');
+            progressItems[currentLevel].classList.add(correct ? 'correct' : 'wrong');
+
+            if (correct) {
+                score += (currentLevel + 1) * 10;
+            }
+
+            // Show answer feedback
+            const answerFeedback = document.querySelector('.answer-feedback');
+            answerFeedback.classList.remove('hidden');
+            answerFeedback.classList.toggle('incorrect', !correct);
+            
+            const feedbackText = correct ? 
+                "Correct! 🎉" : 
+                `Incorrect. The correct answer${currentAnswers.length > 1 ? 's were' : ' was'}: ${currentAnswers.join(', ')}`;
+            
+            answerFeedback.textContent = feedbackText;
+
+            // Disable inputs and submit button during feedback
+            inputs.forEach(input => input.disabled = true);
+            document.querySelector('.submit-btn').disabled = true;
+
+            const nextLevel = currentLevel + 1;
+            currentLevel = nextLevel;
+
+            // Increased wait time to 2 seconds
+            setTimeout(() => {
+                startLevel();
+            }, 2000);
+        }
+
+        function endGame() {
+            document.querySelector('.game-screen').classList.add('hidden');
+            document.querySelector('.result-screen').classList.remove('hidden');
+            
+            const scoreElement = document.querySelector('.score');
+            const ratingElement = document.querySelector('.rating');
+            
+            scoreElement.textContent = `Score: ${score}/550`;
+            
+            let rating;
+            if (score >= 440) {
+                rating = "Romance Genius! 💝";
+            } else if (score >= 330) {
+                rating = "Smooth Talker! 💫";
+            } else if (score >= 220) {
+                rating = "Charming Beginner! 💌";
+            } else {
+                rating = "Keep Practicing! 💪";
+            }
+            
+            ratingElement.textContent = rating;
+        }
+
+        function restartGame() {
+            currentLevel = 0;
+            score = 0;
+            if (timer) {
+                clearInterval(timer);
+            }
+            document.querySelector('.result-screen').classList.add('hidden');
+            document.querySelector('.game-screen').classList.remove('hidden');
+            initializeProgressBar();
+            startLevel();
+        }
+    </script>
+</body>
+</html>
