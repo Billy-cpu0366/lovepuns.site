@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LoveFuns.site - Romantic Word Game</title>
   <style>
-    /* 样式部分与之前保持一致 */
+    /* 样式部分 */
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
     body { min-height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #ff6b6b, #ff8e8e); color: #333; }
     .container { max-width: 800px; margin: 0 auto; padding: 2rem; width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .welcome-screen, .game-screen, .result-screen { background: rgba(255, 255, 255, 0.95); padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); width: 100%; max-width: 600px; text-align: center; }
+    .welcome-screen, .game-screen, .result-screen { background: rgba(255,255,255,0.95); padding: 2rem; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
     h1 { color: #ff4757; margin-bottom: 1.5rem; font-size: 2.5rem; }
     .rules { text-align: left; margin: 1.5rem 0; line-height: 1.6; }
     .rules ul { list-style-type: none; padding-left: 1rem; }
@@ -32,6 +32,8 @@
     .answer-feedback { margin: 1rem 0; padding: 1rem; background: #f8f9fa; border-radius: 0.5rem; font-size: 1.2rem; color: #2ecc71; }
     .incorrect { color: #ff4757; }
   </style>
+  <!-- 引入题库文件 -->
+  <script src="love-puns-extended.js"></script>
 </head>
 <body>
   <div class="container">
@@ -73,60 +75,11 @@
   </div>
 
   <script>
-    /***** 题库定义 *****/
-    const QUESTION_BANK = {
-      "1_word": [
-        {
-          template: "Are you made of ______? Because I'm blinded by your beauty!",
-          blanks: [{ pos: 4, answer: "sunlight" }],
-          hint: "Natural element"
-        },
-        {
-          template: "Is your name ______? Because you look like everything I've ever wanted!",
-          blanks: [{ pos: 3, answer: "destiny" }],
-          hint: "Abstract concept"
-        }
-        // ...可扩充更多
-      ],
-      "2_words": [
-        {
-          template: "Can I borrow your ______? I need to record how ______ looks in moonlight.",
-          blanks: [
-            { pos: 5, answer: "camera" },
-            { pos: 9, answer: "angelic" }
-          ],
-          hint: "Device/Adjective"
-        }
-        // ...可扩充更多
-      ],
-      "3_words": [
-        {
-          template: "Are we in ______? Because this ______ feels like ______!",
-          blanks: [
-            { pos: 4, answer: "paradise" },
-            { pos: 6, answer: "moment" },
-            { pos: 9, answer: "heaven" }
-          ],
-          hint: "Mythical place/Noun/Emotion"
-        }
-        // ...可扩充更多
-      ],
-      "4_words": [
-        {
-          template: "Do you believe in ______? Because when ______ meets ______, magic ______!",
-          blanks: [
-            { pos: 5, answer: "alchemy" },
-            { pos: 7, answer: "sunlight" },
-            { pos: 9, answer: "midnight" },
-            { pos: 11, answer: "happens" }
-          ],
-          hint: "Science concept/Nature elements/Verb"
-        }
-        // ...可扩充更多
-      ]
-    };
+    // 全局变量与题库相关的函数
+    let currentQuestion = null;
+    let remainingQuestions = {};
+    const totalLevels = 10; // 游戏总关卡数
 
-    // 随机打乱数组函数
     function shuffle(array) {
       let copy = array.slice();
       for (let i = copy.length - 1; i > 0; i--) {
@@ -136,11 +89,9 @@
       return copy;
     }
 
-    // 全局变量：用于保存每个难度剩余的题目
-    let remainingQuestions = {};
-
-    // 初始化每个难度的题库（并打乱顺序）
+    // 初始化题库：为每个难度打乱题库数据
     function initQuestionPools() {
+      // QUESTION_BANK 从 love-puns-extended.js 中加载
       remainingQuestions = {
         "1_word": shuffle(QUESTION_BANK["1_word"].slice()),
         "2_words": shuffle(QUESTION_BANK["2_words"].slice()),
@@ -149,8 +100,7 @@
       };
     }
 
-    // 根据当前关卡动态获取题目：
-    // 关卡划分：0-2：1词题，3-5：2词题，6-8：3词题，9：4词题
+    // 根据当前关卡获取对应题目
     function getQuestionForLevel(level) {
       let category = "";
       if (level < 3) {
@@ -162,23 +112,20 @@
       } else {
         category = "4_words";
       }
-      // 如果该分类题目用完，可重新打乱（或视需求提示错误）
       if (remainingQuestions[category].length === 0) {
         remainingQuestions[category] = shuffle(QUESTION_BANK[category].slice());
       }
       return remainingQuestions[category].pop();
     }
 
-    /***** 游戏逻辑部分 *****/
+    // 游戏逻辑部分
     let currentLevel = 0;
     let score = 0;
     let timer;
     let timeLeft;
     let submissionEnabled = true;
-    const totalLevels = 10; // 固定关卡数
 
     function startGame() {
-      // 初始化题库
       initQuestionPools();
       currentLevel = 0;
       score = 0;
@@ -203,16 +150,10 @@
         return;
       }
       submissionEnabled = true;
-      // 根据当前关卡获取随机题目，并转换为游戏格式
-      const question = getQuestionForLevel(currentLevel);
-      const line = {
-        text: question.template,
-        answers: question.blanks.map(b => b.answer),
-        blanks: question.blanks.length,
-        hint: question.hint
-      };
-
-      document.querySelector('.pickup-line').textContent = line.text;
+      // 获取当前关卡题目并保存到 currentQuestion
+      currentQuestion = getQuestionForLevel(currentLevel);
+      // 显示题目文本
+      document.querySelector('.pickup-line').textContent = currentQuestion.template;
       const inputArea = document.querySelector('.input-area');
       const answerFeedback = document.querySelector('.answer-feedback');
       const submitBtn = document.querySelector('.submit-btn');
@@ -221,8 +162,8 @@
       answerFeedback.classList.add('hidden');
       submitBtn.disabled = false;
 
-      // 根据空位数量生成输入框
-      for (let i = 0; i < line.blanks; i++) {
+      // 根据题目空位数量生成对应输入框
+      for (let i = 0; i < currentQuestion.blanks.length; i++) {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'word-input';
@@ -258,25 +199,14 @@
       clearInterval(timer);
 
       const inputs = document.querySelectorAll('.word-input');
-      // 当前关卡正确答案（在 startLevel 中生成时已设置）
-      const currentAnswers = Array.from(inputs).map((input, i) => input.value.toLowerCase().trim());
       let correct = true;
-      // 这里需要重新获取正确答案（可考虑将当前题目保存到全局变量，此处为简单示例）
-      const question = getQuestionForLevel(currentLevel + totalLevels); // 利用索引不准确，为示例说明
-      // 实际上正确答案应在开始关卡时保存，例如：currentQuestion = getQuestionForLevel(currentLevel)
-      // 为保证示例完整，这里仅以预设答案做比较：
-      // （注：在实际代码中，请确保在 startLevel 时将当前题目保存在全局变量中供验证使用）
-      // 下面假设正确答案存于 currentQuestion.answers
-      // 这里我们改为使用预先设定的答案（因为 getQuestionForLevel 已弹出该题）
-      // 为保证逻辑正确，请在 startLevel 时将当前题目保存：
-      //    currentQuestion = line;
-      // 然后在此处使用 currentQuestion.answers
-      // 本示例假设答案验证逻辑已正确（请参考前面生成的 pickupLines 格式）
-
-      // 模拟验证（此处仅为示例，实际应使用当前关卡题目的答案）
-      // 这里直接根据用户输入是否为非空判断（请替换为实际答案对比逻辑）
-      currentAnswers.forEach(ans => {
-        if (ans === "") correct = false;
+      // 对比每个空位的用户输入和正确答案（忽略大小写、空白）
+      currentQuestion.blanks.forEach((blank, i) => {
+        const userInput = inputs[i].value.toLowerCase().trim();
+        const correctAnswer = blank.answer.toLowerCase();
+        if (userInput !== correctAnswer) {
+          correct = false;
+        }
       });
 
       const progressItems = document.querySelectorAll('.progress-item');
@@ -289,7 +219,7 @@
       answerFeedback.classList.toggle('incorrect', !correct);
       answerFeedback.textContent = correct ?
         "Correct! 🎉" :
-        "Incorrect. Check the correct answer in the hint.";
+        `Incorrect. The correct answer${currentQuestion.blanks.length > 1 ? 's are' : ' is'}: ${currentQuestion.blanks.map(b => b.answer).join(', ')}`;
 
       inputs.forEach(input => input.disabled = true);
       document.querySelector('.submit-btn').disabled = true;
@@ -306,7 +236,6 @@
 
       const scoreElement = document.querySelector('.score');
       const ratingElement = document.querySelector('.rating');
-      // 总分计算方式：各关卡分数累加
       const totalScore = totalLevels * 10 * (totalLevels + 1) / 2;
       scoreElement.textContent = `Score: ${score}/${totalScore}`;
 
